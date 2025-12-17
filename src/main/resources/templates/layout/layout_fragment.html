@@ -141,12 +141,13 @@
                 th:href="@{/admin/services}">
                 <i class="bi bi-grid-3x3"></i> Quản lý dịch vụ
             </a>
+            <a class="nav-link" th:classappend="${activePage == 'servicetypes'} ? 'active' : ''"
+                th:href="@{/admin/servicetypes}">
+                <i class="bi bi-tags"></i> Quản lý loại dịch vụ
+            </a>
             <a class="nav-link" th:classappend="${activePage == 'applications'} ? 'active' : ''"
                 th:href="@{/admin/applications}">
                 <i class="bi bi-file-earmark-text"></i> Quản lý hồ sơ
-            </a>
-            <a class="nav-link" th:classappend="${activePage == 'reports'} ? 'active' : ''" th:href="@{/admin/reports}">
-                <i class="bi bi-bar-chart"></i> Báo cáo thống kê
             </a>
 
             <hr class="my-3 bg-white opacity-25">
