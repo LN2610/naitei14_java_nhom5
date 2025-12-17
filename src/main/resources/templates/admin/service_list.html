@@ -1,16 +1,34 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Danh sách Dịch vụ Công</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
-</head>
-<body>
-<div th:replace="~{layout/navbar :: navbar}"></div> <div class="container mt-4">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout/layout_fragment :: head('Quản lý dịch vụ')}"></head>
+
+<body class="d-flex flex-column min-vh-100">
+
+    <div th:replace="~{layout/layout_fragment :: admin-header}"></div>
+
+    <div class="container-fluid flex-grow-1">
+        <div class="row h-100">
+            <div class="col-md-2 col-lg-2 p-0">
+                <div th:replace="~{layout/layout_fragment :: admin-sidebar('services')}"></div>
+            </div>
+
+            <div class="col-md-10 col-lg-10 p-4">
+<div class="container-fluid">
     <div class="card">
-        <div class="card-header bg-success text-white">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="bi bi-list-task"></i> Danh sách Dịch vụ Công</h5>
+            <div>
+                <a th:href="@{/admin/services/new}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle"></i> Tạo mới
+                </a>
+                <a href="/api/v1/admin/services/export" class="btn btn-light btn-sm">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Import CSV
+                </button>
+            </div>
         </div>
         <div class="card-body">
             <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
@@ -120,6 +138,222 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Import Dịch Vụ từ CSV
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Instructions -->
+                <div class="alert alert-info">
+                    <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Hướng dẫn Import CSV:</h6>
+                    <ul class="mb-2">
+                        <li><strong>Định dạng:</strong> File CSV với encoding UTF-8</li>
+                        <li><strong>Header:</strong> <code>code,name,serviceTypeId,fee,processingTime,description</code></li>
+                        <li><strong>Code:</strong> Bắt buộc, không trùng lặp, max 50 ký tự</li>
+                        <li><strong>Name:</strong> Bắt buộc, tên dịch vụ</li>
+                        <li><strong>ServiceTypeId:</strong> Bắt buộc, ID loại dịch vụ (phải tồn tại)</li>
+                        <li><strong>Fee:</strong> Phí dịch vụ (số, >= 0)</li>
+                        <li><strong>ProcessingTime:</strong> Thời gian xử lý (ngày, số nguyên >= 0)</li>
+                        <li><strong>Description:</strong> Mô tả chi tiết (tùy chọn)</li>
+                    </ul>
+                    <p class="mb-0"><strong>Lưu ý:</strong> Các code đã tồn tại sẽ bị bỏ qua.</p>
+                </div>
+
+                <!-- Upload Form -->
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Chọn file CSV <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="csvFileInput" accept=".csv" required>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Chỉ chấp nhận file .csv với encoding UTF-8
+                        </small>
+                    </div>
+                </form>
+
+                <!-- Download Template -->
+                <div class="mb-3">
+                    <button onclick="downloadTemplate()" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-download"></i> Tải file mẫu
+                    </button>
+                </div>
+
+                <!-- Import Result -->
+                <div id="importResultAlert" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Đóng
+                </button>
+                <button type="button" class="btn btn-success" onclick="importFromCsv()">
+                    <i class="bi bi-upload"></i> Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{layout/layout_fragment :: admin-footer}"></div>
+    <div th:replace="~{layout/layout_fragment :: scripts}"></div>
+
+<script>
+    // Import services from CSV
+    function importFromCsv() {
+        const fileInput = document.getElementById('csvFileInput');
+        const file = fileInput.files[0];
+        const resultAlert = document.getElementById('importResultAlert');
+
+        // Validate file selected
+        if (!file) {
+            alert('Vui lòng chọn file!');
+            return;
+        }
+
+        // Validate file type
+        if (!file.name.endsWith('.csv')) {
+            alert('Chỉ chấp nhận file CSV!');
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File không được vượt quá 5MB!');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Show loading
+        resultAlert.innerHTML = `
+        <div class="alert alert-info">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <strong>Đang xử lý file...</strong> Vui lòng đợi.
+        </div>`;
+        resultAlert.style.display = 'block';
+
+        // Disable import button
+        const importBtn = event.target;
+        importBtn.disabled = true;
+        importBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang import...';
+
+        fetch('/api/v1/admin/services/import', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.message || 'Có lỗi xảy ra khi import!');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Import result:', data);
+
+                let alertClass = 'success';
+                let icon = 'check-circle-fill';
+                let title = 'Import thành công!';
+
+                // Build result message
+                let message = `
+            <div class="alert alert-${alertClass}">
+                <i class="bi bi-${icon}"></i> 
+                <h6><strong>${title}</strong></h6>
+                <ul class="mb-2">
+                    <li>Tổng số dòng: <strong>${data.total}</strong></li>
+                    <li>Thành công: <strong class="text-success">${data.success}</strong></li>
+                    <li>Thất bại: <strong class="text-danger">${data.failed}</strong></li>
+                </ul>`;
+
+                // Show errors if any
+                if (data.errors && data.errors.length > 0) {
+                    message += `
+                <div class="mt-2">
+                    <strong>Chi tiết lỗi:</strong>
+                    <ul class="mb-0" style="max-height: 200px; overflow-y: auto;">`;
+                    data.errors.forEach(error => {
+                        message += `<li class="text-danger">${error}</li>`;
+                    });
+                    message += `</ul>
+                </div>`;
+                }
+
+                message += `</div>`;
+                resultAlert.innerHTML = message;
+
+                // Reload page if any success
+                if (data.success > 0) {
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('Import error:', error);
+                resultAlert.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle-fill"></i> 
+                <h6><strong>Có lỗi xảy ra!</strong></h6>
+                <p class="mb-0">${error.message}</p>
+            </div>`;
+            })
+            .finally(() => {
+                // Re-enable import button
+                importBtn.disabled = false;
+                importBtn.innerHTML = '<i class="bi bi-upload"></i> Import';
+            });
+    }
+
+    // Download CSV template
+    function downloadTemplate() {
+        const csvContent = 
+`code,name,serviceTypeId,fee,processingTime,description
+DV001,Cấp giấy khai sinh,1,50000,3,"Dịch vụ cấp giấy khai sinh cho trẻ em"
+DV002,Đăng ký kết hôn,1,100000,5,"Dịch vụ đăng ký kết hôn"
+DV003,Cấp CCCD,2,200000,7,"Dịch vụ cấp căn cước công dân"
+DV004,Đăng ký thường trú,2,150000,10,"Dịch vụ đăng ký hộ khẩu thường trú"
+DV005,Cấp giấy phép xây dựng,4,500000,15,"Dịch vụ cấp giấy phép xây dựng nhà ở"`;
+
+        // Create blob with UTF-8 BOM
+        const blob = new Blob(['\ufeff' + csvContent], {
+            type: 'text/csv;charset=utf-8;'
+        });
+
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute("href", url);
+        link.setAttribute("download", "service_template.csv");
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Show success message
+        setTimeout(() => {
+            alert('✓ File mẫu đã được tải xuống!');
+        }, 100);
+    }
+
+    // Clear import modal when closed
+    document.getElementById('importModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('importForm').reset();
+        document.getElementById('importResultAlert').style.display = 'none';
+    });
+</script>
 </body>
 </html>

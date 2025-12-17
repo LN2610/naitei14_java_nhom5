@@ -18,6 +18,27 @@ public class ServiceAdminController {
 
     private final ServiceManagementService serviceManagementService;
     private final ServiceTypeService serviceTypeService;
+
+    @GetMapping
+    public String listServices(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDir,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long serviceTypeId,
+            Model model) {
+        
+        model.addAttribute("servicePage", serviceManagementService.getServices(page, size, sortBy, sortDir, keyword, serviceTypeId));
+        model.addAttribute("serviceTypes", serviceTypeService.getAllServiceTypes());
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("sortDir", sortDir);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("serviceTypeId", serviceTypeId);
+        
+        return "admin/service_list";
+    }
+
     @GetMapping("/new")
     public String showNewServiceForm(Model model) {
         model.addAttribute("service", new Service());

@@ -36,4 +36,6 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
             ServiceType serviceType,
             Pageable pageable);
     long countByServiceTypeId(Long id);
+    
+    boolean existsByCode(String code);
 }
