@@ -149,25 +149,19 @@ public class AdminApplicationController {
             model.addAttribute("applicationDetail", application);
             model.addAttribute("statuses", StatusEnum.values());
             
-            // Lấy danh sách staff theo role
-            boolean isManager = authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"));
-            
+            // Lấy danh sách staff theo department chịu trách nhiệm cho service của application
             List<User> staffList;
-            if (isManager) {
-                // MANAGER chỉ thấy staff trong department của mình
-                String username = authentication.getName();
-                User currentUser = userRepository.findByUsername(username)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-                
-                if (currentUser.getDepartment() != null) {
-                    staffList = userRepository.findStaffByDepartmentId(currentUser.getDepartment().getId());
-                } else {
-                    staffList = List.of(); // Không có department thì không có staff
-                }
+            
+            // Lấy service từ application
+            var service = serviceRepository.findById(application.getService().getId())
+                    .orElseThrow(() -> new RuntimeException("Service not found"));
+            
+            // Nếu service có responsible department, lấy staff của department đó
+            if (service.getResponsibleDepartment() != null) {
+                staffList = userRepository.findStaffByDepartmentId(service.getResponsibleDepartment().getId());
             } else {
-                // ADMIN thấy tất cả staff
-                staffList = userRepository.findAllStaff();
+                // Nếu service không có department chịu trách nhiệm, không hiện staff nào
+                staffList = List.of();
             }
             
             model.addAttribute("staffList", staffList);
