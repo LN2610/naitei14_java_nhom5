@@ -702,6 +702,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     }
 
     @Override
+<<<<<<< Updated upstream
     public void exportApplicationsToCsv(Writer writer, org.springframework.security.core.Authentication authentication) {
         try {
             // 1. Ghi ký tự BOM để hỗ trợ hiển thị tiếng Việt trong Excel
@@ -780,6 +781,8 @@ public class UserManagementServiceImpl implements UserManagementService {
     }
 
     @Override
+=======
+>>>>>>> Stashed changes
     public void exportCitizensToCsv(Writer writer) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         try {
