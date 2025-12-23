@@ -16,7 +16,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequiredArgsConstructor
 @RequestMapping("/admin/servicetypes")
 @PreAuthorize("hasRole('ROLE_ADMIN')")
-public class ServiceTypeAdminController {
+public class AdminServiceTypeController {
 
     private final ServiceTypeService serviceTypeService;
 
