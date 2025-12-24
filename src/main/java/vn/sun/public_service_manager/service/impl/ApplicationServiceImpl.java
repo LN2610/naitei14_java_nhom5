@@ -71,10 +71,10 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application applicationInDb = applicationRepository.save(application);
 
         // save application status
-        ApplicationStatus applicationStatus = new ApplicationStatus();
-        applicationStatus.setApplication(applicationInDb);
-        applicationStatus.setStatus(StatusEnum.PROCESSING);
-        applicationStatusRepository.save(applicationStatus);
+        // ApplicationStatus applicationStatus = new ApplicationStatus();
+        // applicationStatus.setApplication(applicationInDb);
+        // applicationStatus.setStatus(StatusEnum.RECEIVED);
+        // applicationStatusRepository.save(applicationStatus);
 
         // save application documents
         for (MultipartFile file : files) {
@@ -287,12 +287,12 @@ public class ApplicationServiceImpl implements ApplicationService {
                         () -> new ResourceNotFoundException("Hồ sơ không tồn tại hoặc bạn không có quyền truy cập."));
         return ApplicationResApiDTO.fromEntity(application);
     }
-    
+
     @Override
     public void exportApplicationsToCsv(Writer writer) {
         exportApplicationsToCsv(writer, null);
     }
-    
+
     @Override
     public void exportApplicationsToCsv(Writer writer, ApplicationFilterDTO filter) {
         try {
@@ -346,10 +346,11 @@ public class ApplicationServiceImpl implements ApplicationService {
                     String citizenName = (app.getCitizen() != null) ? app.getCitizen().getFullName() : "N/A";
                     String submittedAt = (app.getSubmittedAt() != null) ? app.getSubmittedAt().format(formatter) : "";
                     String note = app.getNote() != null ? app.getNote() : "";
-                    String procTime = (app.getService() != null) ? String.valueOf(app.getService().getProcessingTime()) : "0";
+                    String procTime = (app.getService() != null) ? String.valueOf(app.getService().getProcessingTime())
+                            : "0";
 
                     // Ghi dòng dữ liệu vào CSV
-                    csvWriter.writeNext(new String[]{
+                    csvWriter.writeNext(new String[] {
                             appCode,
                             serviceName,
                             citizenName,
@@ -364,7 +365,7 @@ public class ApplicationServiceImpl implements ApplicationService {
             throw new RuntimeException("Lỗi khi xuất CSV Application: " + e.getMessage(), e);
         }
     }
-    
+
     @Override
     public void softDeleteApplication(Long id) {
         Application application = applicationRepository.findById(id)
